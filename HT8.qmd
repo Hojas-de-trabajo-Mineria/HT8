@@ -1,0 +1,71 @@
+---
+title: "HT8"
+format: html
+editor: visual
+---
+
+# Hoja de trabajo 8
+
+```{r include=FALSE}
+
+library(psych)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(psych)
+library(corrplot)
+library(RColorBrewer)
+library(nortest)
+library(lmtest)
+library(jtools)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(e1071)
+library(randomForest)
+
+pricesTrain <- read.csv("train.csv")
+```
+
+## Modificación de datos
+
+```{r mod_datos}
+colSums(is.na(pricesTrain))
+
+orderPrice <- pricesTrain[order(pricesTrain$SalePrice),]
+orderPrice['Clasificacion']<- list(1:nrow(orderPrice))
+orderPrice <- orderPrice %>% select(-c(Id, MoSold, YrSold, GarageYrBlt, Alley, LotShape, LandContour, Condition2, YearBuilt, Exterior2nd, FireplaceQu, GarageQual, SaleType,BsmtFinType2, BsmtFinSF2, BsmtUnfSF, BsmtFullBath, BsmtHalfBath, X3SsnPorch, GarageFinish, YearRemodAdd, PoolQC, Fence, MiscFeature))
+
+orderPrice <- orderPrice %>% mutate_at (c("MSSubClass","MSZoning", "Utilities", "LotConfig", "Street", "LandSlope", "Neighborhood", "Condition1", "BldgType", "HouseStyle", "OverallQual", "OverallCond", "RoofStyle", "PavedDrive", "RoofMatl", "Exterior1st", "MasVnrType", "ExterQual", "ExterCond","Foundation", "BsmtQual", "BsmtCond", "BsmtExposure", "BsmtFinType1", "Heating", "HeatingQC", "CentralAir","Electrical", "Functional", "GarageType", "GarageCond", "SaleCondition", "KitchenQual"), as.factor)
+orderPrice <- orderPrice %>% mutate_at(c('MasVnrArea', 'LotFrontage', 'LotArea', 'OverallQual', 'OverallCond', 'BsmtFinSF1', 'TotalBsmtSF', 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces', 'GarageCars', 'GarageArea', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', 'ScreenPorch', 'PoolArea', 'MiscVal', 'SalePrice'), as.numeric)
+
+orderPrice$Clasificacion[orderPrice$SalePrice <= 139000] <- 'Economica'
+
+orderPrice$Clasificacion[orderPrice$SalePrice > 139000 & orderPrice$SalePrice <= 189893 ] <- 'Intermedia'
+
+orderPrice$Clasificacion[orderPrice$SalePrice > 189893] <- 'Cara'
+
+orderPrice <- orderPrice %>% mutate_at(c('MasVnrArea', 'LotFrontage', 'LotArea', 'OverallQual', 'OverallCond', 'BsmtFinSF1', 'TotalBsmtSF', 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces', 'GarageCars', 'GarageArea', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', 'ScreenPorch', 'PoolArea', 'MiscVal', 'SalePrice'), scale)
+```
+
+Fueron retiradas las variables que no tienen relación con la variable respuesta, así como aquellas con altas cantidades de NA's. Todas las variables categóricas fueron convertidas en factores y las numéricas fueron normalizadas. Además, fue agregada una variable categórica que representa el rango de precio en el que se encuentra cada una de las casas, esta es nuestra variable de interés.
+
+## Muestreo
+
+Muestreo estratificado
+
+```{r dividir}
+# COnvertir en factores
+orderPrice <- orderPrice%>%mutate_at(c("Clasificacion"),as.factor)
+set.seed(456)
+economicas <- orderPrice[orderPrice$Clasificacion == 'Economica',]
+intermedias <- orderPrice[orderPrice$Clasificacion == 'Intermedia',]
+caras <- orderPrice[orderPrice$Clasificacion == 'Cara',]
+
+filasCasasE <- sample(nrow(economicas), nrow(economicas)*0.7)
+filasCasasI <- sample(nrow(intermedias), nrow(intermedias)*0.7)
+filasCasasC <- sample(nrow(caras), nrow(caras)*0.7)
+
+train <- rbind(economicas[filasCasasE,], intermedias[filasCasasI,], caras[filasCasasC,])
+test <- rbind(economicas[-filasCasasE,], intermedias[-filasCasasI,], caras[-filasCasasC,])
+```
