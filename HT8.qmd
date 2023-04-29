@@ -23,6 +23,16 @@ library(rpart.plot)
 library(caret)
 library(e1071)
 library(randomForest)
+library(tidyverse)
+library(ggthemes)
+library(ggpubr)
+library(neuralnet)
+library(nnet)
+library(RWeka)
+library(dummy)
+library(tensorflow)
+library(keras)
+library(NeuralNetTools)
 
 pricesTrain <- read.csv("train.csv")
 ```
@@ -69,3 +79,57 @@ filasCasasC <- sample(nrow(caras), nrow(caras)*0.7)
 train <- rbind(economicas[filasCasasE,], intermedias[filasCasasI,], caras[filasCasasC,])
 test <- rbind(economicas[-filasCasasE,], intermedias[-filasCasasI,], caras[-filasCasasC,])
 ```
+
+## Modelos de clasificación
+
+### Modelo 1
+
+```{r}
+testClas <- na.omit(test)
+y<- testClas[,"Clasificacion"]
+testClas <- testClas%>% select(-c("SalePrice", "Clasificacion"))
+
+trainClas <- train %>% select(-c("SalePrice"))
+
+modelo1 <- nnet(Clasificacion~.,data = trainClas, size=4, rang=0.1,
+                   decay=5e-4, maxit=200) 
+
+
+prediccion1 <- as.data.frame(predict(modelo1, newdata = testClas))
+columnaMasAlta<-apply(prediccion1, 1, function(x) colnames(prediccion1)[which.max(x)])
+
+columnaMasAlta <- as.factor(unlist(columnaMasAlta))
+
+confusionMatrix(columnaMasAlta,y)
+#Gr[afica predicción 1
+plot(columnaMasAlta , col="green",density=20,angle=135)
+plot(y, col="blue",density=20,angle=45,add=TRUE, beside = TRUE)
+legend("bottom",
+c("Predicción del modelo","Datos reales"),
+fill=c("green","blue"))
+
+```
+
+Veamos que utilizando la red generada por la librería nnet, con 4 neuronas en su capa oculta, nos proporciona un accuracy del $79.34\%$. Vemos que parece ser que el modelo tiene un ligero underfitting, ya que clasifica varias de las casas "intermedias" que en realidad son de otro valor. Esto tiene sentido ya que el valor intermedio es el que se encuentra entre los otros dos
+
+### Modelo 2
+
+```{r}
+trainClas <- na.omit(trainClas)
+modelo2 <- caret::train(Clasificacion~.,data = trainClas, method="nnet", trace=F)
+
+prediccion2<- as.data.frame(predict(modelo2, newdata = testClas))
+prediccion2 <- as.factor(unlist(prediccion2))
+confusionMatrix(prediccion2,y)
+
+plot(prediccion2 , col="green",density=20,angle=135)
+plot(y, col="blue",density=20,angle=45,add=TRUE, beside = TRUE)
+legend("bottom",
+c("Predicción del modelo","Datos reales"),
+fill=c("green","blue"))
+
+plot(modelo2)
+
+```
+
+Veamos que utilizando la red generada por la librería nnet, con 4 neuronas en su capa oculta, nos proporciona un accuracy del $82.93\%$. Vemos que parece ser que el modelo tiene un ligero underfitting, ya que clasifica varias de las casas "intermedias" que en realidad son de otro valor. Esto tiene sentido ya que el valor intermedio es el que se encuentra entre los otros dos
