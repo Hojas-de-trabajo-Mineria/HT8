@@ -99,7 +99,7 @@ fill=c("green","blue"))
 
 ```
 
-Veamos que utilizando la red generada por la librería nnet, con 4 neuronas en su capa oculta, nos proporciona un accuracy del $79.34\%$. Vemos que parece ser que el modelo tiene un ligero underfitting, ya que clasifica varias de las casas "intermedias" que en realidad son de otro valor. Esto tiene sentido ya que el valor intermedio es el que se encuentra entre los otros dos
+Veamos que utilizando la red generada por la librería nnet, con 4 neuronas en su capa oculta, nos proporciona un accuracy del $80.54\%$. Vemos que parece ser que el modelo tiene un ligero underfitting, ya que clasifica varias de las casas "intermedias" que en realidad son de otro valor. Esto tiene sentido ya que el valor intermedio es el que se encuentra entre los otros dos
 
 ### Modelo 2
 
@@ -158,3 +158,13 @@ rmse_m2
 ```
 
 Al comparar los RMSE de ambos modelos podemos ver que el modelo 2 predice de mejor manera el comportamiento, por lo tanto, de ahora en adelante se trabajará utlilizando dicho modelo.
+
+## Comparación con otros algoritmos
+
+### Clasificación
+
+Veamos que en este caso, nuestro modelo 2 es igual ed bueno que nuestro "mejor modelo" anterior, que es el árbol realizado con RandomForest. Vemos que ambos nos dan alrededor de 82% de accuracy, por lo que podemos decir, que es comparativamente mejor que el resto de modelos que no incluye árboles de decisión
+
+### Regresión
+
+Veamos que el mejor modelo de regresión que teníamos anteriormente era el NaiveBayes, con un error del 18%. Veamos que este modelo es comparatuvamente peor, ya que el mejor de los dos tiene un error del 55%, lo cual es bastante mayor que el de NaiveBayes. Sin embargo, podemos ver que es mejor que el modelo lineal planteado, ya que este tenía alrededor de 80% de error
