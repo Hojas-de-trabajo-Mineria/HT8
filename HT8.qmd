@@ -11,18 +11,8 @@ editor: visual
 library(psych)
 library(dplyr)
 library(ggplot2)
-library(reshape2)
-library(psych)
-library(corrplot)
-library(RColorBrewer)
-library(nortest)
-library(lmtest)
-library(jtools)
-library(rpart)
-library(rpart.plot)
 library(caret)
 library(e1071)
-library(randomForest)
 library(tidyverse)
 library(ggthemes)
 library(ggpubr)
@@ -30,7 +20,6 @@ library(neuralnet)
 library(nnet)
 library(RWeka)
 library(dummy)
-library(tensorflow)
 library(keras)
 library(NeuralNetTools)
 
@@ -133,3 +122,44 @@ plot(modelo2)
 ```
 
 Veamos que utilizando la red generada por la librería nnet, con 4 neuronas en su capa oculta, nos proporciona un accuracy del $82.93\%$. Vemos que parece ser que el modelo tiene un ligero underfitting, ya que clasifica varias de las casas "intermedias" que en realidad son de otro valor. Esto tiene sentido ya que el valor intermedio es el que se encuentra entre los otros dos
+
+## Modelos de regresión
+
+### Modelo 1
+
+```{r reg_mod_1}
+train_n <- train[, c('MasVnrArea', 'LotFrontage', 'LotArea', 'OverallQual', 'OverallCond', 'BsmtFinSF1', 'TotalBsmtSF', 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces', 'GarageCars', 'GarageArea', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', 'ScreenPorch', 'PoolArea', 'MiscVal', 'SalePrice')]
+test_n <- test[, c('MasVnrArea', 'LotFrontage', 'LotArea', 'OverallQual', 'OverallCond', 'BsmtFinSF1', 'TotalBsmtSF', 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces', 'GarageCars', 'GarageArea', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', 'ScreenPorch', 'PoolArea', 'MiscVal', 'SalePrice')]
+sp <- function(x) log(1 + exp(x))
+
+rm1 <- neuralnet(SalePrice~., data = na.omit(train_n), hidden = 2, rep = 3, act.fct = sp, threshold = 0.2)
+
+pred_rm1 <- predict(rm1, newdata = test_n[, -26])
+
+ctrl <- trainControl(classProbs = TRUE,
+                     summaryFunction = twoClassSummary)
+
+set.seed(29510)
+lda_data <- learning_curve_dat(dat = train_n,
+                     outcome = "SalePrice",
+                     test_prop = 1/4,
+                     ## `train` arguments:
+                     method = "lda",
+                     metric = "ROC",
+                     trControl = ctrl)
+
+
+
+ggplot(lda_data, aes(x = Training_Size, y = ROC, color = Data)) +
+  geom_smooth(method = loess, span = .8)
+```
+
+### Modelo 2
+
+```{r reg_mod_2}
+sgm <- function(x) 1/(1 + exp(-x))
+
+rm2 <- neuralnet(SalePrice~., data = na.omit(train_n), hidden = 3, rep = 3, act.fct = sgm, threshold = 0.2)
+
+pred_rm2 <- predict(rm2, newdata = test_n[, -26])
+```
