@@ -135,23 +135,6 @@ sp <- function(x) log(1 + exp(x))
 rm1 <- neuralnet(SalePrice~., data = na.omit(train_n), hidden = 2, rep = 3, act.fct = sp, threshold = 0.2)
 
 pred_rm1 <- predict(rm1, newdata = test_n[, -26])
-
-ctrl <- trainControl(classProbs = TRUE,
-                     summaryFunction = twoClassSummary)
-
-set.seed(29510)
-lda_data <- learning_curve_dat(dat = train_n,
-                     outcome = "SalePrice",
-                     test_prop = 1/4,
-                     ## `train` arguments:
-                     method = "lda",
-                     metric = "ROC",
-                     trControl = ctrl)
-
-
-
-ggplot(lda_data, aes(x = Training_Size, y = ROC, color = Data)) +
-  geom_smooth(method = loess, span = .8)
 ```
 
 ### Modelo 2
@@ -163,3 +146,15 @@ rm2 <- neuralnet(SalePrice~., data = na.omit(train_n), hidden = 3, rep = 3, act.
 
 pred_rm2 <- predict(rm2, newdata = test_n[, -26])
 ```
+
+## Comparación de los modelos de regresión
+
+```{r reg_mod_comp}
+rmse_m1 <- (sum((na.omit(pred_rm1 - test_n[, "SalePrice"])^2)) / length(pred_rm1))^(1/2)
+rmse_m2 <- (sum((na.omit(pred_rm2 - test_n[, "SalePrice"])^2)) / length(pred_rm2))^(1/2)
+
+rmse_m1
+rmse_m2
+```
+
+Al comparar los RMSE de ambos modelos podemos ver que el modelo 2 predice de mejor manera el comportamiento, por lo tanto, de ahora en adelante se trabajará utlilizando dicho modelo.
